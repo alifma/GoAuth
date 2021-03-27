@@ -7,25 +7,30 @@ import (
 )
 
 func main() {
+	mux := http.DefaultServeMux
 
-	http.HandleFunc("/student", ActionStudent)
+	// http.HandleFunc("/student", ActionStudent)
+	mux.HandleFunc("/student", ActionStudent)
+
+	var handler http.Handler = mux
+	handler = MiddlewareAuth(handler)
+	handler = MiddlewareAllowOnlyGet(handler)
 
 	server := new(http.Server)
 	server.Addr = ":3000"
+	server.Handler = handler
 
 	fmt.Printf("Service is running on localhost%s", server.Addr)
 	server.ListenAndServe()
 }
 
 func ActionStudent(w http.ResponseWriter, r *http.Request) {
-	if !Auth(w, r) {return}
-	if !AllowOnlyGET(w, r) {return}
-
 	if id := r.URL.Query().Get("id"); id != "" {
 		OutputJSON(w, SelectStudent(id))
 		return
 	}
 	OutputJSON(w, GetStudents())
+	
 }
 
 func OutputJSON(w http.ResponseWriter, o interface{}) {
